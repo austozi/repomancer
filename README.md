@@ -1,7 +1,7 @@
 
 # Repomancer
 
-A self-hosted web app inspired by [Ketarin](https://github.com/canneverbe/Ketarin) that tracks software installers and automatically keeps your collection current. It can scrape metadata from various publisher websites, including [GitHub](https://github.com), [GitLab](https://gitlab.com), [Codeberg](https://codeberg.org), [SourceForge](https://sourceforge.net), and generic websites.
+A self-hosted web app inspired by [Ketarin](https://github.com/canneverbe/Ketarin) that tracks software installers and automatically keeps your collection current. It can scrape metadata and download the binary files from various publisher websites, including [GitHub](https://github.com), [GitLab](https://gitlab.com), [Codeberg](https://codeberg.org), [SourceForge](https://sourceforge.net), and generic websites.
 
 **Disclaimer:** This software contains a lot of AI-generated code written by [Copilot](https://copilot.microsoft.com). This is my personal project. I built this to satisfy a personal need. If you use this software, be advised that I do not offer any support or warranty.
 
