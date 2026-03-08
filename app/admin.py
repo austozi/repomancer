@@ -4,11 +4,15 @@ from werkzeug.utils import secure_filename
 from .database import db, App, Variant
 from .tasks import trigger_check_all_async, check_app_by_id
 from .scraping import HTTPClient
-import os, json
+from .tasks import slugify  # reuse existing helper for safe folder names
 from sqlalchemy.exc import IntegrityError
+from datetime import datetime
+import os, json
 
 # Allowed icon extensions; we will normalise the stored filename to logo.<ext>
 ALLOWED_ICON_EXTS = {'.png', '.webp', '.jpg', '.jpeg', '.svg'}
+# Allowed installer extensions for manual uploads
+ALLOWED_INSTALLER_EXTS = {'.msi', '.exe', '.zip'}
 
 admin_bp = Blueprint('admin', __name__, template_folder='templates')
 
@@ -34,7 +38,6 @@ def _cleanup_old_logos(folder: str, keep_ext: str | None = None):
             if ext not in ALLOWED_ICON_EXTS:
                 continue
             if keep_ext and ext == keep_ext.lower():
-                # We'll overwrite this specific one soon; allow removal as well to avoid stale inode
                 try:
                     os.remove(os.path.join(folder, name))
                 except Exception:
@@ -105,22 +108,18 @@ def admin_app_form(app_id=None):
 
         uploaded = request.files.get('icon_file')
         if uploaded and uploaded.filename:
-            # Use original extension if allowed; else default to .png
             filename = secure_filename(uploaded.filename)
             ext = os.path.splitext(filename)[1].lower()
             if ext not in ALLOWED_ICON_EXTS:
                 ext = '.png'
-            # Remove prior logo.* before saving new one
             _cleanup_old_logos(icons_base, keep_ext=ext)
             dest = os.path.join(icons_base, f'logo{ext}')
             uploaded.save(dest)
-            # Persist relative path (relative to ICONS_DIR)
             rel = os.path.relpath(dest, current_app.config['ICONS_DIR'])
             app_obj.icon_local_path = rel
             db.session.commit()
             safe_flash('Icon uploaded and normalised to logo file name', 'success')
         else:
-            # Try remote icon URL
             remote = (request.form.get('icon_url') or app_obj.icon_url or '').strip()
             if remote.lower().startswith(('http://', 'https://')):
                 try:
@@ -129,7 +128,6 @@ def admin_app_form(app_id=None):
                         referrer=current_app.config.get('DEFAULT_REFERRER'),
                         timeout=int(current_app.config.get('REQUEST_TIMEOUT', 15))
                     )
-                    # Derive extension from URL; if unsupported/missing, default .png
                     name_part = secure_filename(remote.split('/')[-1].split('?')[0])
                     ext = os.path.splitext(name_part)[1].lower()
                     if ext not in ALLOWED_ICON_EXTS:
@@ -174,7 +172,18 @@ def admin_variant_form(app_id=None, variant_id=None):
         key = request.form.get('key', '').strip()
         strategy_type = request.form.get('strategy_type', 'generic')
         strategy_config = request.form.get('strategy_config', '{}')
-        enabled = request.form.get('enabled') == 'on'
+
+        # Preferred checkbox: 'disable_updates' -> enabled = not disable_updates
+        if 'disable_updates' in request.form:
+            disable_updates = (request.form.get('disable_updates') == 'on')
+            enabled = (not disable_updates)
+        else:
+            # Back-compat with any existing 'enabled' checkbox
+            enabled = (request.form.get('enabled') == 'on')
+
+        # Optional manual version string for uploaded installers
+        manual_version = (request.form.get('manual_version') or '').strip()
+
         try:
             json.loads(strategy_config)
         except json.JSONDecodeError:
@@ -189,6 +198,40 @@ def admin_variant_form(app_id=None, variant_id=None):
         else:
             variant = Variant(app_id=app_obj.id, key=key, strategy_type=strategy_type, strategy_config=strategy_config, enabled=enabled)
             db.session.add(variant)
+            db.session.flush()
+
+        # If a manual version is provided, set it
+        if manual_version:
+            try:
+                variant.current_version = manual_version
+            except Exception:
+                pass
+
+        # Optional installer upload (MSI/EXE/ZIP) for legacy/proprietary apps
+        uploaded = request.files.get('installer_file')
+        if uploaded and uploaded.filename:
+            fname = secure_filename(uploaded.filename)
+            ext = os.path.splitext(fname)[1].lower()
+            if ext not in ALLOWED_INSTALLER_EXTS:
+                safe_flash('Invalid installer type. Allowed: MSI, EXE, ZIP', 'danger')
+                return render_template('admin_variant_form.html', app=app_obj, variant=variant)
+
+            base = current_app.config['DOWNLOAD_DIR']
+            rel_dir = os.path.join(slugify(app_obj.name), key)
+            dest_dir = os.path.join(base, rel_dir)
+            os.makedirs(dest_dir, exist_ok=True)
+
+            dest = os.path.join(dest_dir, fname)
+            uploaded.save(dest)
+
+            rel_path = os.path.relpath(dest, base)
+            variant.local_file_path = rel_path
+            try:
+                variant.file_size_bytes = os.path.getsize(dest)
+            except Exception:
+                pass
+            variant.last_updated = datetime.utcnow()
+
         db.session.commit()
         safe_flash('Variant saved', 'success')
         return redirect(url_for('admin.admin_app_detail', app_id=app_obj.id))

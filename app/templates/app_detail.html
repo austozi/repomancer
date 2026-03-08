@@ -42,7 +42,29 @@
       </div>
     {% endif %}
     {% if app.description %}
-      <p>{{ app.description }}</p>
+      <div id="app-desc" class="mb-3"></div>
+      <script>
+        (function(){
+          const raw = {{ app.description|tojson|safe }};
+          function ensureLibs(cb){
+            const needMarked = (typeof window.marked === 'undefined');
+            const needPurify = (typeof window.DOMPurify === 'undefined');
+            let pending = 0; function done(){ if(--pending === 0) cb(); }
+            if(!needMarked && !needPurify){ return cb(); }
+            if(needMarked){ pending++; const s=document.createElement('script'); s.src='https://cdn.jsdelivr.net/npm/marked/marked.min.js'; s.onload=done; document.head.appendChild(s);} 
+            if(needPurify){ pending++; const s2=document.createElement('script'); s2.src='https://cdn.jsdelivr.net/npm/dompurify/dist/purify.min.js'; s2.onload=done; document.head.appendChild(s2);} 
+          }
+          ensureLibs(function(){
+            try{
+              if(window.marked && window.DOMPurify){
+                const html = window.marked.parse(raw||'');
+                const clean = window.DOMPurify.sanitize(html, {USE_PROFILES:{html:true}});
+                document.getElementById('app-desc').innerHTML = clean;
+              } else { document.getElementById('app-desc').textContent = raw||''; }
+            }catch(e){ document.getElementById('app-desc').textContent = raw||''; }
+          });
+        })();
+      </script>
     {% endif %}
   </div>
 
@@ -58,7 +80,6 @@
               <th>Local download</th>
               <th>File</th>
               <th class="text-end">Size</th>
-              <th>Publisher link</th>
               <th>Updated</th>
             </tr>
           </thead>
@@ -69,20 +90,13 @@
                 <td>{{ v.current_version or '-' }}</td>
                 <td>
                   {% if v.local_file_path %}
-                    <a class="btn btn-sm btn-primary" href="/files/{{ v.local_file_path }}" download>
-                      Download
-                    </a>
+                    <a class="btn btn-sm btn-primary" href="/files/{{ v.local_file_path }}" download>Download</a>
                   {% else %}
                     <span class="btn btn-sm btn-outline-secondary disabled" title="Not downloaded yet">Unavailable</span>
                   {% endif %}
                 </td>
                 <td>{{ v.local_file_path|basename if v.local_file_path else '-' }}</td>
                 <td class="text-end">{{ v.file_size_bytes|human_size if v.file_size_bytes else '-' }}</td>
-                <td>
-                  {% if v.installer_url %}
-                    <a href="{{ v.installer_url }}" target="_blank" rel="noopener">link</a>
-                  {% else %}-{% endif %}
-                </td>
                 <td>{{ v.last_updated.strftime('%Y-%m-%d %H:%M') if v.last_updated else '-' }}</td>
               </tr>
             {% endfor %}
