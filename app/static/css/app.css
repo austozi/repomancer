@@ -1,0 +1,3 @@
+
+/* Site-wide: ensure button text stays on one line */
+.btn { white-space: nowrap; }

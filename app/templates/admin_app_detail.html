@@ -1,0 +1,69 @@
+
+{% extends 'base.html' %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div class="d-flex align-items-center gap-3">
+    {% if app.icon_local_path %}
+      <img src="/icons/{{ app.icon_local_path }}" alt="{{ app.name }}" style="width:48px;height:48px;object-fit:contain;">
+    {% endif %}
+    <h3 class="mb-0">{{ app.name }}</h3>
+  </div>
+  <div class="d-flex gap-2">
+    <form method="post" action="/admin/app/{{ app.id }}/check">
+      <button class="btn btn-primary">Check updates for this app</button>
+    </form>
+    <a class="btn btn-outline-primary" href="/admin/app/{{ app.id }}/edit">Edit app</a>
+    <a class="btn btn-success" href="/admin/app/{{ app.id }}/variant/new">Add variant</a>
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-8">
+    <div class="card">
+      <div class="card-header">Variants</div>
+      <div class="card-body p-0">
+        <table class="table mb-0 align-middle">
+          <thead>
+            <tr>
+              <th>Key</th><th>Version</th><th>Installer</th><th>Local file</th><th>Size</th><th>Updated</th><th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for v in variants %}
+              <tr>
+                <td><span class="badge text-bg-secondary">{{ v.key }}</span></td>
+                <td>{{ v.current_version or '-' }}</td>
+                <td>{% if v.installer_url %}<a href="{{ v.installer_url }}" target="_blank">link</a>{% else %}-{% endif %}</td>
+                <td>{% if v.local_file_path %}<a href="/files/{{ v.local_file_path }}">{{ v.local_file_path|basename }}</a>{% else %}-{% endif %}</td>
+                <td>{{ v.file_size_bytes|human_size if v.file_size_bytes else '-' }}</td>
+                <td>{{ v.last_updated.strftime('%Y-%m-%d %H:%M') if v.last_updated else '-' }}</td>
+                <td class="text-end">
+                  <a class="btn btn-sm btn-outline-primary" href="/admin/variant/{{ v.id }}/edit">Edit</a>
+                  <form method="post" action="/admin/variant/{{ v.id }}/delete" class="d-inline" onsubmit="return confirm('Delete variant?');">
+                    <button class="btn btn-sm btn-outline-danger">Delete</button>
+                  </form>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="card">
+      <div class="card-header">App info</div>
+      <div class="card-body">
+        <div><strong>Latest version:</strong> {{ app.latest_version or '-' }}</div>
+        <div><strong>Last check:</strong> {{ app.last_update_check.strftime('%Y-%m-%d %H:%M') if app.last_update_check else '-' }}</div>
+        <div><strong>Website:</strong> {% if app.project_website %}<a href="{{ app.project_website }}" target="_blank">{{ app.project_website }}</a>{% else %}-{% endif %}</div>
+        <div><strong>Changelog:</strong> {% if app.changelog_url %}<a href="{{ app.changelog_url }}" target="_blank">link</a>{% else %}-{% endif %}</div>
+        <div><strong>Licence:</strong> {{ app.licence or '-' }}</div>
+        <div><strong>Tags:</strong> {{ app.tags or '-' }}</div>
+        {% if app.icon_local_path %}<div class="mt-2"><strong>Icon:</strong> <a href="/icons/{{ app.icon_local_path }}" target="_blank">{{ app.icon_local_path|basename }}</a></div>{% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

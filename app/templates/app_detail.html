@@ -1,0 +1,98 @@
+
+{% extends 'base.html' %}
+{% block content %}
+<div class="row g-3">
+  <div class="col-12">
+    <div class="d-flex align-items-center gap-3 mb-2">
+      {% if app.icon_local_path %}
+        <img src="/icons/{{ app.icon_local_path }}" alt="{{ app.name }}" style="width:64px;height:64px;object-fit:contain;">
+      {% endif %}
+      <div>
+        <h3 class="mb-0">{{ app.name }}</h3>
+        {% if app.latest_version %}
+          <div class="text-muted">Latest version: {{ app.latest_version }}</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Public info as a vertical list -->
+    <ul class="list-unstyled mb-3">
+      {% if app.publisher_name %}
+        <li><strong>Publisher:</strong> {{ app.publisher_name }}</li>
+      {% endif %}
+      {% if app.project_website %}
+        <li><strong>Website:</strong> <a href="{{ app.project_website }}" target="_blank" rel="noopener">{{ app.project_website }}</a></li>
+      {% endif %}
+      {% if app.changelog_url %}
+        <li><strong>Changelog:</strong> <a href="{{ app.changelog_url }}" target="_blank" rel="noopener">{{ app.changelog_url }}</a></li>
+      {% endif %}
+      {% if app.licence %}
+        <li><strong>Licence:</strong> {{ app.licence }}</li>
+      {% endif %}
+      {% if app.last_update_check %}
+        <li><strong>Last check:</strong> {{ app.last_update_check.strftime('%Y-%m-%d %H:%M') }}</li>
+      {% endif %}
+    </ul>
+
+    {% if app.tags %}
+      <div class="mb-3">
+        {% for tag in app.tags.split(',') %}
+          <span class="badge text-bg-light border me-1">{{ tag.strip() }}</span>
+        {% endfor %}
+      </div>
+    {% endif %}
+    {% if app.description %}
+      <p>{{ app.description }}</p>
+    {% endif %}
+  </div>
+
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">Variants</div>
+      <div class="card-body p-0">
+        <table class="table mb-0 align-middle">
+          <thead>
+            <tr>
+              <th style="width: 120px;">Key</th>
+              <th>Version</th>
+              <th>Local download</th>
+              <th>File</th>
+              <th class="text-end">Size</th>
+              <th>Publisher link</th>
+              <th>Updated</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for v in variants %}
+              <tr>
+                <td><span class="badge text-bg-secondary">{{ v.key }}</span></td>
+                <td>{{ v.current_version or '-' }}</td>
+                <td>
+                  {% if v.local_file_path %}
+                    <a class="btn btn-sm btn-primary" href="/files/{{ v.local_file_path }}" download>
+                      Download
+                    </a>
+                  {% else %}
+                    <span class="btn btn-sm btn-outline-secondary disabled" title="Not downloaded yet">Unavailable</span>
+                  {% endif %}
+                </td>
+                <td>{{ v.local_file_path|basename if v.local_file_path else '-' }}</td>
+                <td class="text-end">{{ v.file_size_bytes|human_size if v.file_size_bytes else '-' }}</td>
+                <td>
+                  {% if v.installer_url %}
+                    <a href="{{ v.installer_url }}" target="_blank" rel="noopener">link</a>
+                  {% else %}-{% endif %}
+                </td>
+                <td>{{ v.last_updated.strftime('%Y-%m-%d %H:%M') if v.last_updated else '-' }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="mt-3">
+      <a class="btn btn-outline-secondary" href="/">← Back to apps</a>
+    </div>
+  </div>
+</div>
+{% endblock %}
