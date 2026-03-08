@@ -1,0 +1,25 @@
+services:
+  repomancer:
+    build:
+      context: .
+    container_name: repomancer
+    restart: unless-stopped
+    user: "1000:1000"
+    environment:
+      TZ: Europe/London
+      REPOMANCER_USER_AGENT: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:122.0) Gecko/20100101 Firefox/122.0"
+      REPOMANCER_REFERRER: ""
+      REPOMANCER_PAGE_SIZE: 15
+      REPOMANCER_DB_PATH: /data/repomancer.db
+      REPOMANCER_DOWNLOAD_DIR: /data/repo
+      REPOMANCER_UPDATE_INTERVAL_MINUTES: 1440
+      REPOMANCER_SECRET_KEY: change-me # Generate with `openssl rand -hex 32`
+      REPOMANCER_REQUEST_TIMEOUT: 15
+    ports:
+      - 8000:8000
+    volumes:
+      - ./data:/data
+    networks:
+      - frontend
+networks:
+  frontend:
