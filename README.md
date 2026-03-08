@@ -9,10 +9,11 @@ A self-hosted web app inspired by [Ketarin](https://github.com/canneverbe/Ketari
 
 Clone this repository and run `docker build .` from where Dockerfile is.
 
+Pre-built images are available at https://hub.docker.com/r/austozi/repomancer.
+
 ## Install
 
-1. Download docker-compose.yml and edit as appropriate.
-2. From the directory containing docker-compose.yml, run `docker compose up -d`.
+Clone this repository and edit docker-compose.yml as appropriate. Then, from the directory containing docker-compose.yml, run `docker compose up -d`.
 
 ## Configure
 
