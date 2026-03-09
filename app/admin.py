@@ -12,7 +12,7 @@ import os, json
 # Allowed icon extensions; we will normalise the stored filename to logo.<ext>
 ALLOWED_ICON_EXTS = {'.png', '.webp', '.jpg', '.jpeg', '.svg'}
 # Allowed installer extensions for manual uploads
-ALLOWED_INSTALLER_EXTS = {'.msi', '.exe', '.zip'}
+ALLOWED_INSTALLER_EXTS = {'.msi', '.exe', '.zip', '.iso', '.img'}
 
 admin_bp = Blueprint('admin', __name__, template_folder='templates')
 
