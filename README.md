@@ -13,7 +13,7 @@ Pre-built images are available at https://hub.docker.com/r/austozi/repomancer.
 
 ## Install
 
-Clone this repository and edit docker-compose.yml as appropriate. Then, from the directory containing docker-compose.yml, run `docker compose up -d`.
+Clone this repository and edit docker-compose.yml as appropriate. Then, from the directory containing docker-compose.yml, run `docker compose up -d --build`.
 
 ## Configure
 
