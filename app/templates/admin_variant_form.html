@@ -42,6 +42,71 @@
 
   <div class="row g-3 mt-1">
     <div class="col-md-6">
+      <label class="form-label">Upload installer (MSI, EXE, ZIP, ISO, IMG)</label>
+      <input type="file" name="installer_file" class="form-control"
+             accept=".msi,.exe,.zip,.iso,.img,application/zip,application/x-msdownload,application/x-msi,application/x-iso9660-image,application/x-raw-disk-image">
+      <div class="form-text">Use this when the installer is not downloadable online.</div>
+      {% if variant and variant.local_file_path %}
+      <div class="mt-2 small text-muted">
+        Current local file: <a href="/files/{{ variant.local_file_path }}" target="_blank">{{ variant.local_file_path|basename }}</a>
+      </div>
+      {% endif %}
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Version (for manual upload)</label>
+      <input type="text" name="manual_version" class="form-control" value="{{ variant.current_version if variant and variant.current_version else '' }}" placeholder="e.g. 4.2.1">
+    </div>
+  </div>
+
+  <div class="mt-3">
+    <button class="btn btn-primary">Save</button>
+    <a class="btn btn-secondary" href="/admin/app/{{ app.id }}">Cancel</a>
+  </div>
+</form>
+{% endblock %}
+{% extends 'base.html' %}
+{% block content %}
+<h3>{{ 'Edit variant' if variant else 'Add variant' }} for {{ app.name }}</h3>
+<form method="post" enctype="multipart/form-data" class="mt-3">
+  <div class="row g-3">
+    <div class="col-md-4">
+      <label class="form-label">Key *</label>
+      <input class="form-control" name="key" value="{{ variant.key if variant else '' }}" required placeholder="e.g. win64, win32, win64-portable">
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Strategy *</label>
+      <select class="form-select" name="strategy_type">
+        {% set st = variant.strategy_type if variant else 'generic' %}
+        <option value="generic" {% if st=='generic' %}selected{% endif %}>Generic (regex/XPath)</option>
+        <option value="github" {% if st=='github' %}selected{% endif %}>GitHub</option>
+        <option value="gitlab" {% if st=='gitlab' %}selected{% endif %}>GitLab</option>
+        <option value="codeberg" {% if st=='codeberg' %}selected{% endif %}>Codeberg</option>
+        <option value="sourceforge" {% if st=='sourceforge' %}selected{% endif %}>SourceForge</option>
+      </select>
+    </div>
+    <div class="col-md-4 d-flex align-items-center">
+      <div class="form-check mt-4 me-4">
+        <input class="form-check-input" type="checkbox" name="enabled" id="enabled" {% if variant and variant.enabled %}checked{% else %}checked{% endif %}>
+        <label class="form-check-label" for="enabled">Enabled</label>
+      </div>
+      <div class="form-check mt-4">
+        <input class="form-check-input" type="checkbox" name="disable_updates" id="disable_updates" {% if variant and not variant.enabled %}checked{% endif %}>
+        <label class="form-check-label" for="disable_updates">Disable automatic update checking</label>
+      </div>
+    </div>
+    <div class="col-12">
+      <label class="form-label">Strategy config (JSON)</label>
+      <textarea class="form-control" name="strategy_config" rows="10" spellcheck="false">{{ variant.strategy_config if variant else '{
+  "page_url": "",
+  "version": {"type": "regex", "pattern": ""},
+  "download": {"type": "template", "template": ""}
+}' }}</textarea>
+      <div class="form-text">Tip: see README for examples. Use <code>{version}</code> in templates.</div>
+    </div>
+  </div>
+
+  <div class="row g-3 mt-1">
+    <div class="col-md-6">
       <label class="form-label">Upload installer (MSI, EXE, ZIP)</label>
       <input type="file" name="installer_file" class="form-control" accept=".msi,.exe,.zip,application/zip,application/x-msdownload,application/x-msi">
       <div class="form-text">Use this when the installer is not downloadable online.</div>
